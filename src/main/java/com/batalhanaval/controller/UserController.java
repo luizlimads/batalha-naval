@@ -42,8 +42,8 @@ public class UserController {
                 .nivelAcesso(NivelAcesso.USER)
                 .diamante(10)
                 .moeda(500)
-                .volumeMusica(0.5f)
-                .volumeSom(0.5f)
+                .volumeMusica(50)
+                .volumeSom(50)
                // .srcAvatar("../../assets/images/img-home-page/pirata1.png")
                 .idAvatar(1)
                 .idTema(1)
@@ -55,8 +55,11 @@ public class UserController {
 
         user = this.userService.saveUser(user);
 
+        if (user.getId() == null) {
+            return ResponseEntity.status(HttpStatus.CREATED).body(user);
+        }
 
-        this.pacoteController.comprarPacote(user.getId(), 1L); //falar pro Flavio dps ;-;
+        this.pacoteController.comprarPacote(user.getId(), 1L);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
@@ -65,6 +68,13 @@ public class UserController {
     @CrossOrigin
     public ResponseEntity<User> getUser(@PathVariable Long userId) {
         User user = this.userService.getUser(userId);
+        return ResponseEntity.ok(user);
+    }
+
+    @GetMapping("{userId}/op")
+    @CrossOrigin
+    public ResponseEntity<UserModel> getUserOp(@PathVariable Long userId) {
+        UserModel user = this.userService.getUserO(userId);
         return ResponseEntity.ok(user);
     }
 
@@ -160,7 +170,7 @@ public class UserController {
 
     @PutMapping("{userId}/alterar-volume")
     @CrossOrigin
-    public ResponseEntity<User> alterarVolume(@RequestParam() float volumeSom, @RequestParam() float volumeMusica, @PathVariable Long userId) {
+    public ResponseEntity<User> alterarVolume(@RequestParam() int volumeSom, @RequestParam() int volumeMusica, @PathVariable Long userId) {
         User user = this.userService.getUser(userId);
 
         if (user == null) {
@@ -169,6 +179,28 @@ public class UserController {
 
         user.setVolumeSom(volumeSom);
         user.setVolumeMusica(volumeMusica);
+        user = this.userService.saveUser(user);
+
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("{userId}/resultado-jogo")
+    @CrossOrigin
+    public ResponseEntity<User> resultadoJogo(@RequestParam() boolean win, @PathVariable Long userId) {
+
+        User user = this.userService.getUser(userId);
+
+        if (user == null) {
+            return ResponseEntity.notFound().build();
+        }
+        if(win){
+            user.setVitorias(user.getVitorias()+1);
+            user.setMoeda(user.getMoeda()+50);
+        }else{
+            user.setDerrotas(user.getDerrotas()+1);
+            user.setMoeda(user.getMoeda()+10);
+        }
+
         user = this.userService.saveUser(user);
 
         return ResponseEntity.ok(user);

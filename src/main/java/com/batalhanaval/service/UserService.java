@@ -35,11 +35,43 @@ public class UserService {
     }
 
     public User saveUser(User user) {
+        User userEncontrado = this.userRepository.findByEmail(user.getEmail());
+
+        if (userEncontrado != null && user.getId() == null) {
+            return new User();
+        }
+
         return this.userRepository.save(user);
     }
 
     public User getUser(Long userId) {
         return this.userRepository.findById(userId).orElse(null);
+    }
+
+    public UserModel getUserO(Long userId) {
+        User user = this.userRepository.findById(userId).orElse(null);
+        Avatar avatar = this.avatarRepository.findById((long) user.getIdAvatar()).orElse(null);
+
+        byte[] imageData = ImageUtil.decompressImage(avatar.getImgAvatar());
+        String base64 = "data:image/jpg;base64,"+ Base64.getEncoder().encodeToString(imageData);
+
+        return new UserModel(
+                        user.getId(),
+                        user.getNome(),
+                        user.getEmail(),
+                        user.getSenha(),
+                        user.getDataNascimento(),
+                        user.getNivelAcesso(),
+                        user.getDiamante(),
+                        user.getMoeda(),
+                        user.getVolumeMusica(),
+                        user.getVolumeSom(),
+                        user.getVitorias(),
+                        user.getDerrotas(),
+                        user.getIdAvatar(),
+                        user.getIdTema(),
+                        user.getIdEmbarcacao(),
+                        base64);
     }
 
     public List<UserModel> getUsers() {
@@ -110,15 +142,16 @@ public class UserService {
 
         User user = this.userRepository.findByEmail(model.getLogin());
 
-        if (user == null) return new LoginResponse("Usuário não encontrado. Por favor, verifique suas credenciais ou cadastre-se.", false, 0L, "");
+        if (user == null) return new LoginResponse("Usuário não encontrado. Por favor, verifique suas credenciais ou cadastre-se.", false, 0L, "", null);
 
-        if (!Objects.equals(user.getSenha(), model.getSenha())) return new LoginResponse("Senha incorreta.", false, 0L, "");
+        if (!Objects.equals(user.getSenha(), model.getSenha())) return new LoginResponse("Senha incorreta.", false, 0L, "", null);
 
         LoginResponse response = new LoginResponse();
         response.setMensagem("Logado com sucesso!");
         response.setSucessoLogin(true);
         response.setUsuarioId(user.getId());
         response.setNomeUsuario(user.getNome());
+        response.setNivelAcesso(user.getNivelAcesso());
 
         return response;
     }
